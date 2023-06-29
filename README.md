@@ -1,5 +1,5 @@
-# Context receivers
+# Safe concurrency
 
-Proudly presented at [Kotlin XL Meetup](https://kotlin.nl/events/kotlin-meetup-xl-in-hilversum/)
+Proudly presented at [Kotlin Amsterdam Meetup](https://www.meetup.com/nlkug-dutch-kotlin-user-group/events/294135157/)
 
-## [Slides](http://serras.github.io/kotlin-xl-ctx/slides)
+## [Slides](http://serras.github.io/safe-concurrency-arrow/slides)
