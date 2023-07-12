@@ -98,6 +98,30 @@ No mention of coroutines contexts today
 
 ---
 
+# ⛖ Two tasks in parallel
+
+.code60[
+```kotlin
+suspend fun UserRepo.getUserInfo(name: String): UserInfo? 
+  = coroutineScope {
+    val name = getByName(name) ?: return null
+    val avatarTask  = async { download(user.avatarUrl) }
+    val friendsTask = async { 
+      user.friends().map { getById(it).name } 
+    }
+    val avatar = avatarTask.await()
+    val friendNames = friendsTask.await()
+    UserInfo(user.id, name, avatar, friendNames) 
+  }
+```
+]
+
+--
+
+☢️ This only considers the _success_ path
+
+---
+
 # 🏁 Finish modes for coroutines
 
 ✅ .grey[**Success**]
@@ -225,6 +249,25 @@ suspend fun download(url: Url): ByteArray =
 
 ---
 
+# 🪅 Separation of concerns
+
+Avoid the risk of contaminating _what to do_ with
+accidental complexity of _handling errors_
+
+.code70[
+```kotlin
+suspend fun download(url: Url): ByteArray =
+  for (attempt in 1 .. MAX_ATTEMPTS) {
+    try { url.readBytes() }
+    catch (e: Exception) {
+      if (attempt == MAX_ATTEMPTS) throw e
+    }
+  }
+```
+]
+
+---
+
 # 🧮 More complex policies
 
 .margin-top[
@@ -339,19 +382,24 @@ Many external services require _preparation_
 
 # 🧰 Resource management
 
-.margin-top[
-- `try`/`catch`/`finally` (inherited from Java)
-- `resource.use { ... }`
+.code70[
+```kotlin
+try {
+  val config = CONFIG_FILE.inputStream()
+  HttpClient().use { client ->
+    // and now work with config and client!
+  }
+} finally {
+  config.close()
+}
+```
 ]
 
-## Problems
+--
 
-.margin-top[
 - Deep nesting instead of linear code
 - Release is defined far from acquisition
-  - Either in `finally` for `try`,
-  - Or in the `close` implementation
-]
+- Patterns cannot be easily abstracted
 
 ---
 
@@ -514,8 +562,8 @@ Sequence of steps that succeed or fail as a unit
 
 <table>
   <tr>
-    <th>Resources</th>
-    <th>Sagas</th>
+    <td>&nbsp;&nbsp; <b>Resources</b></td>
+    <td><b>Sagas</b></td>
   </tr>
   <tr>
     <td colspan="2" style="padding-top: 10px;"><i>For each action we define...</i></td>
@@ -577,8 +625,8 @@ saga {    // introduces the SagaScope
 
 2️⃣ Structure and scopes make our life easier
 
-- Runner that introduces `ThingScope`
-- Operations live in that `ThingScope`
+- Runner introduces a `Scope` in the context
+- Operations live in that `Scope`
 
 ---
 
